@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use chrono::Local;
+use chrono::{DateTime, Datelike, Local, Timelike};
 use colored::Colorize;
 use unrar::Archive;
 use zip::read::ZipFile;
@@ -75,8 +75,15 @@ fn format_date(last_modified: zip::DateTime) -> String {
     let day = last_modified.day();
     let hour = last_modified.hour();
     let minute = last_modified.minute();
-    let second = last_modified.second();
-    return format!("{}-{}-{} {}:{}:{}", year, month, day, hour, minute, second);
+    let second = last_modified.second() as u32;
+    let date = Local::now();
+    date.with_year(year as i32);
+    date.with_month(month as u32);
+    date.with_day(day as u32);
+    date.with_hour(hour as u32);
+    date.with_minute(minute as u32);
+    date.with_second(second);
+    return date.format(TIME_FMT).to_string();
 }
 
 // fn find_most_frequent_string(arr: &[String]) -> Option<&String> {
