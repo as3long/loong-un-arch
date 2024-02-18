@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use chrono::{DateTime, Datelike, Local, Timelike};
+use chrono::{Datelike, Local, Timelike};
 use colored::Colorize;
 use unrar::Archive;
 use zip::read::ZipFile;
