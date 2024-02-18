@@ -1,0 +1,162 @@
+.selected-tree-item {
+    background: rgba(235, 106, 59, 0.795);
+    color: white;
+  }
+  
+  .tree-item:hover .on-item-hover {
+    display: block;
+  }
+  
+  .tree-item .on-item-hover {
+    display: none;
+  }
+  
+  .tree-item-node:hover li>.on-item-hover {
+    display: block;
+  }
+  
+  
+  .tree-item-node li>.on-item-hover {
+    display: none;
+  }
+  
+  
+  .tree-item {
+    padding: 0.25em;
+  }
+  
+  ul.explorer {
+    padding-left: 0;
+    margin: 0;
+    list-style-type: none;
+    display: block;
+  }
+  
+  .explorer li {
+    border-radius: 4px;
+  }
+  
+  .tree-item__drag-over {
+    background-color: rgba(22, 22, 22, 0.068) !important;
+  }
+  
+  
+  .root__drag-over {
+    border-left: 6px solid #ccc !important;
+  }
+  
+  
+  .chevron-right {
+    color: gray;
+  }
+  
+  .hide-chevron {
+    visibility: collapse;
+  }
+  
+  .icon-area {
+    width: 22px;
+    margin-right: 0.4em;
+  }
+  
+  .guide-line {
+    width: 1em;
+    border-top: 1px dashed rgb(192, 192, 192);
+  }
+  
+  .node-name {
+    cursor: pointer;
+    margin-left: 5px;
+  }
+  
+  .d-flex {
+    display: flex;
+    align-items: center;
+  }
+
+  .d-flex div:has(.file-info) {
+    flex-grow: 1;
+  }
+  
+  .align-items-center {
+    align-items: center;
+  }
+  
+  .nested {
+    margin-left: 47px !important;
+  }
+  
+  .root {
+    margin-left: 30px !important;
+  }
+  
+  .tiny_horizontal_margin {
+    margin-left: 2px;
+    margin-right: 2px;
+  }
+  
+  .tree-item__checkbox-area {
+    display: flex;
+    align-items: center;
+  }
+  
+  .node-child {
+    text-align: left;
+    display: block;
+    border-left: 1px dashed rgb(192, 192, 192);
+  }
+  
+  .hide {
+    display: none;
+  }
+  
+  .hide-guidelines {
+    border-left: none !important;
+  }
+  
+  .chevron-right {
+    box-sizing: border-box;
+    position: relative;
+    display: block;
+    transform: scale(var(--ggs, 1));
+    width: 22px;
+    height: 22px;
+    border: 2px solid transparent;
+    border-radius: 100px;
+    transition: .2s;
+  }
+  
+  .pointer {
+    cursor: pointer;
+  }
+  
+  .chevron-right.rotate-90::after {
+    transform: rotateZ(45deg);
+  }
+  
+  .chevron-right::after {
+    content: "";
+    display: block;
+    box-sizing: border-box;
+    position: absolute;
+    width: 7px;
+    height: 7px;
+    border-bottom: 2px solid;
+    border-right: 2px solid;
+    transform: rotate(-45deg);
+    right: 6px;
+    top: 5px
+  }
+
+  .file-info {
+    display: flex;
+    justify-content : flex-end;
+  }
+
+  .file-info .file-size {
+    margin-right: 20px;
+  }
+
+  .file-info  .file-time {
+    margin-right: 20px;
+  }

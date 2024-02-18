@@ -1,0 +1,36 @@
+[package]
+name = "loong_un_arch"
+version = "0.0.4"
+description = "解压软件"
+authors = ["as3long"]
+license = ""
+repository = ""
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[build-dependencies]
+tauri-build = { version = "1.5", features = [] }
+
+[dependencies]
+tauri = { version = "1.5", features = [ "dialog-all"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+# 格式化时间
+chrono = "0.4.32"
+# 命令行输出带颜色
+colored = "2.1.0"
+# 列出并提取rar文件
+unrar = "0.5.2"
+# zip压缩,解压
+zip = "0.6.6"
+# 编码转换
+encoding = "0.2"
+# 编码检测
+chardet = "0.2.3"
+filetime = "0.2.23"
+
+[features]
+# this feature is used for production builds or when `devPath` points to the filesystem
+# DO NOT REMOVE!!
+custom-protocol = ["tauri/custom-protocol"]
