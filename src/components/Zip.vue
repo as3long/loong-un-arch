@@ -75,6 +75,7 @@ function parseZipList(listStr: string) {
     arr.forEach(item => {
         const fileHeader = item.split('|');
         // console.log(window.gbkconvert(fileHeader[0]))
+        console.log(fileHeader)
         out.push(new FileInfo(fileHeader[0], parseInt(fileHeader[1], 10), new Date(fileHeader[2])))
     })
     return out;

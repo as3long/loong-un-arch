@@ -2,6 +2,9 @@ import { createApp } from "vue";
 import "./styles.css";
 import "css-file-icons";
 import App from "./App.vue";
+import VConsole from 'vconsole';
+
+new VConsole();
 
 // Vuetify
 import 'vuetify/styles'
