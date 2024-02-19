@@ -76,7 +76,7 @@ function parseZipList(listStr: string) {
         const fileHeader = item.split('|');
         // console.log(window.gbkconvert(fileHeader[0]))
         console.log(fileHeader)
-        out.push(new FileInfo(fileHeader[0], parseInt(fileHeader[1], 10), new Date(fileHeader[2])))
+        out.push(new FileInfo(fileHeader[0], parseInt(fileHeader[1], 10), dayjs(fileHeader[2]).toDate()))
     })
     return out;
 }
