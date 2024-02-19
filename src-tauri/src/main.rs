@@ -83,7 +83,7 @@ fn format_date(last_modified: zip::DateTime) -> String {
     date.with_hour(hour as u32);
     date.with_minute(minute as u32);
     date.with_second(second);
-    return date.format("%Y-%m-%d %H:%M:%S%").to_string();
+    return date.format("%Y-%m-%d %H:%M:%S").to_string();
 }
 
 // fn find_most_frequent_string(arr: &[String]) -> Option<&String> {
