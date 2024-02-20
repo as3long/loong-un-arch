@@ -1626,7 +1626,7 @@ dependencies = [
 
 [[package]]
 name = "loong_un_arch"
-version = "0.1.4"
+version = "0.1.6"
 dependencies = [
  "chardet",
  "chrono",
@@ -1638,6 +1638,7 @@ dependencies = [
  "tauri",
  "tauri-build",
  "unrar",
+ "url",
  "zip",
 ]
 

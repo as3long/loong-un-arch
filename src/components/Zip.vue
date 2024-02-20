@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { invoke } from "@tauri-apps/api/tauri";
-import { listen } from '@tauri-apps/api/event';
+import { TauriEvent, listen } from '@tauri-apps/api/event';
 import * as dialog from '@tauri-apps/api/dialog';
 import ExtraceDialog from "./ExtraceDialog.vue";
 // import { appDataDir } from '@tauri-apps/api/path';
@@ -9,6 +9,12 @@ import dayjs from "dayjs";
 import '../tree.css'; 
 import Vue3TreeVue from 'vue3-tree-vue';
 import {FileInfoNode, fileInfoToTree} from '../utils/path-to-tree';
+import pThrottle from 'p-throttle';
+
+const throttle = pThrottle({
+	limit: 1,
+	interval: 1000
+});
 
 const desserts = ref<FileInfo[]>([])
 const fileItems = ref<FileInfoNode[]>([])
@@ -84,6 +90,8 @@ function parseZipList(listStr: string) {
 const selected = ref('');
 const extractPath = ref('');
 const snackbar = ref(false);
+const snackbarWarn = ref(false);
+const snackbarWarnMsg = ref('');
 let fileSuffix: string;
 async function open() {
     // await invoke("lzw", { command: { data: 'hello'} });
@@ -121,18 +129,63 @@ async function open() {
     }
 }
 
+async function dropFileHandler(p: string) {
+    console.log(TauriEvent.WINDOW_FILE_DROP, p)
+    const regex = /.(zip|rar)$/;
+    if (regex.test(p)) {
+        selected.value = p || '';
+        const arr = selected.value.split('.');
+        fileSuffix = arr[arr.length - 1];
+        extractPath.value = selected.value.replace(/.(zip|rar)$/, '');
+        console.log(selected.value, extractPath.value, arr, fileSuffix)
+        if (fileSuffix === 'rar') {
+            let list: string = await invoke("rar_list", { pathStr: selected.value })
+            // console.log(parseRarList(list))
+            desserts.value = parseRarList(list);
+        } else if (fileSuffix === 'zip') {
+            let list: string = await invoke("zip_list", { pathStr: selected.value })
+            // console.log(parseRarList(list))
+            desserts.value = parseZipList(list);
+        }
 
-listen("tauri://file-drop", async ({ event, payload }) => {
-    console.log("tauri://file-drop", event)
-    console.log("tauri://file-drop", payload)
+        fileItems.value = fileInfoToTree(desserts.value);
+        console.log(fileItems.value)
+    } else {
+        snackbarWarnMsg.value = '只支持rar和zip格式的文件';
+        snackbarWarn.value = true;
+    }
+}
+
+listen(TauriEvent.WINDOW_FILE_DROP, async ({ payload }) => {
+    if (payload) {
+        await throttle(dropFileHandler)((payload as Array<string>)[0])
+    }
 })
 
 listen('tauri://file-drop-hover', (e) => {
-    console.log('tauri://file-drop-hover', e)
+    throttle(() => {
+        console.log('tauri://file-drop-hover', e)
+    })
+    
 });
 
 listen('tauri://file-drop-cancelled', (e) => {
-    console.log('tauri://file-drop-cancelled', e)
+    throttle(() => {
+        console.log('tauri://file-drop-cancelled', e)
+    })
+});
+
+declare global {
+  interface Window {
+    openedUrls: string;
+  }
+}
+
+onMounted(() => {
+    if (window.openedUrls) {
+        console.log(window.openedUrls)
+        dropFileHandler(window.openedUrls)
+    }
 });
 
 function calcSize(num: number) {
@@ -221,6 +274,15 @@ function hasIcon(type: string) {
             解压成功
             <template v-slot:actions>
                 <v-btn color="blue" variant="text" @click="snackbar = false">
+                    关闭
+                </v-btn>
+            </template>
+        </v-snackbar>
+
+        <v-snackbar v-model="snackbarWarn" timeout="2000">
+            {{ snackbarWarnMsg }}
+            <template v-slot:actions>
+                <v-btn color="blue" variant="text" @click="snackbarWarn = false">
                     关闭
                 </v-btn>
             </template>

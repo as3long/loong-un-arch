@@ -1,6 +1,6 @@
 [package]
 name = "loong_un_arch"
-version = "0.1.4"
+version = "0.1.6"
 description = "解压软件"
 authors = ["as3long"]
 license = ""
@@ -29,6 +29,7 @@ encoding = "0.2"
 # 编码检测
 chardet = "0.2.3"
 filetime = "0.2.23"
+url = "2.5.0"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem

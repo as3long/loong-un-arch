@@ -1,6 +1,11 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use std::{env, sync::Mutex};
+use tauri::Manager;
+
+struct OpenedUrls(Mutex<Option<Vec<url::Url>>>);
+
 use chrono::{Datelike, Local, Timelike};
 use colored::Colorize;
 use unrar::Archive;
@@ -232,6 +237,43 @@ async fn zip_extract(path_str: String, to_path_str: String) -> Result<(), String
 
 fn main() {
     tauri::Builder::default()
+        .manage(OpenedUrls(Default::default()))
+        .setup(|app| {
+            #[cfg(any(windows, target_os = "linux"))]
+            {
+              // NOTICE: `args` may include URL protocol (`your-app-protocol://`) or arguments (`--`) if app supports them.
+              let mut urls = Vec::new();
+              for arg in env::args().skip(1) {
+                if let Ok(url) = url::Url::parse(&arg) {
+                  urls.push(url);
+                }
+              }
+      
+              if !urls.is_empty() {
+                app.state::<OpenedUrls>().0.lock().unwrap().replace(urls);
+              }
+            }
+      
+            let opened_urls = if let Some(urls) = &*app.state::<OpenedUrls>().0.lock().unwrap() {
+              urls
+                .iter()
+                .map(|u| u.as_str().replace("\\", "\\\\"))
+                .collect::<Vec<_>>()
+                .join(", ")
+            } else {
+              "".into()
+            };
+            
+            println!("opened_urls {}", opened_urls);
+
+            // tauri::WindowBuilder::new(app, "main", Default::default())
+            //   .initialization_script(&format!("window.openedUrls = `{opened_urls}`;console.log(`{opened_urls}`);"))
+            //   .build()
+            //   .unwrap();
+            let _ = app.get_window("main").unwrap().eval(&format!("window.openedUrls = '{opened_urls}';console.log('{opened_urls}');"));
+
+            Ok(())
+          })
         .invoke_handler(tauri::generate_handler![log, rar_extract, rar_list, zip_list, zip_extract])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
