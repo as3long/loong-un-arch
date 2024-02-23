@@ -219,7 +219,7 @@ function hasIcon(type: string) {
     const iconStr = 'mp3, wav, aif, cda, mid, midi, mpa, mkv, ogg, wpa, wpl, 7z, zip, rar, tar.gz, pkg, z, csv, dat, json, xml, dat, db, dbf, sql, ns, 3ds, max, ai, psd, ttf, woff, woff2, png, bmp, jpg, jpeg, gif, tif, tiff, svg, rss, torrent, ppt, pps, pptx, odp, asp, c, cs, java, jsp, swift, php, hh, go, py, js, html, xhtml, css, vb, rb, scss, sass, less, jsx, sh, pl, xls, xlsx, xlsm, ods, dll, bak, ini, dmp, sys, cfg, tmp, icns, doc, docx, log, txt, pdf, avi, mov, mp4, mpg, mpeg, mkv, wmv, wps, exe';
     const list = iconStr.split(', ');
 
-    return list.indexOf(type) > 0
+    return list.indexOf(type) >= 0
 }
 </script>
 
@@ -230,7 +230,7 @@ function hasIcon(type: string) {
             <!-- <v-btn @click="openExtraceDialog">解压</v-btn> -->
             <extrace-dialog v-if="!(selected == '')" v-model:path="extractPath" @confirm="extractHandler"></extrace-dialog>
         </div>
-        <vue3-tree-vue :items="fileItems" style="width: 100%; display: block; border-right: 1px solid gray;">
+        <vue3-tree-vue :items="fileItems" style="width: 100%; display: block;">
             <template v-slot:item-prepend-icon="treeViewItem">
                 <img style="scale: 0.8;" src="../assets/folder.svg" alt="folder" 
                     v-if="treeViewItem.type === 'folder'"

@@ -91,54 +91,10 @@ fn format_date(last_modified: zip::DateTime) -> String {
     return date.format("%Y-%m-%d %H:%M:%S").to_string();
 }
 
-// fn find_most_frequent_string(arr: &[String]) -> Option<&String> {
-//     let mut string_count = HashMap::new();
-
-//     // 计算每个字符串的出现次数
-//     for s in arr {
-//         *string_count.entry(s).or_insert(0) += 1;
-//     }
-
-//     // 找出最大的重复次数
-//     let max_count = string_count.values().max().cloned();
-
-//     // 找出重复次数最多的字符串
-//     let most_frequent_string = string_count.iter()
-//         .find(|(_, &count)| Some(count) == max_count)
-//         .map(|(&s, _)| s);
-
-//     most_frequent_string
-// }
-
-// // 这个方法主要区分是gbk还是utf8
-// fn charset2enc(byte_str: &[u8]) -> String {
-//     let charset = detect(byte_str);
-//     println!("charset2enc {}", charset.0);
-//     let charset2enc_str = match charset.0.as_str() {
-//         "CP932" => "windows-31j",
-//         "CP949" => "windows-949",
-//         "MacCyrillic" => "x-mac-cyrillic",
-//         "ISO-8859-1" => "GBK",
-//         "ISO-8859-2" => "GBK",
-//         "ISO-8859-3" => "GBK",
-//         "ISO-8859-4" => "GBK",
-//         "ISO-8859-5" => "GBK",
-//         "ISO-8859-6" => "GBK",
-//         "ISO-8859-7" => "GBK",
-//         "ISO-8859-8" => "GBK",
-//         "ISO-8859-9" => "GBK",
-//         "ascii" => "GBK",
-//         "" => "GBK",
-//         _ => charset.0.as_str(),
-//     }.to_string();
-
-//     return charset2enc_str;
-// }
-
 /**
  * 检测zip文件编码
  */
-fn detect_zip(path_str: String) -> String {
+fn detect_zip(path_str: &String) -> String {
     let file = fs::File::open(path_str).unwrap();
     let reader = BufReader::new(file);
 
@@ -179,7 +135,7 @@ async fn zip_list(path_str: String) -> String {
     let reader = BufReader::new(file);
 
     let mut archive = zip::ZipArchive::new(reader).unwrap();
-    let charset = detect_zip(path_str);
+    let charset = detect_zip(&path_str);
     println!("zip_list {}", charset);
     for i in 0..archive.len() {
         let file = archive.by_index(i).unwrap();
@@ -192,13 +148,14 @@ async fn zip_list(path_str: String) -> String {
 
 #[tauri::command]
 async fn zip_extract(path_str: String, to_path_str: String) -> Result<(), String> {
-    let detect_zip_path_str = path_str.clone();
+    // let detect_zip_path_str = path_str.clone();
+    let charset = detect_zip(&path_str);
     let file = fs::File::open(path_str).unwrap();
     let reader = BufReader::new(file);
     let outdir_path = Path::new(&to_path_str);
 
     let mut archive = zip::ZipArchive::new(reader).unwrap();
-    let charset = detect_zip(detect_zip_path_str);
+    
     for i in 0..archive.len() {
         let mut file = archive.by_index(i).unwrap();
         let name = u82str(&file, charset.as_str());
