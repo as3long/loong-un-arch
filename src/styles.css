@@ -14,6 +14,10 @@
   -webkit-text-size-adjust: 100%;
 }
 
+@view-transition {
+  navigation: auto;
+}
+
 /* body::-webkit-scrollbar {
   display: none;
 } */
@@ -39,14 +43,20 @@
 }
 
 .row {
+  display: -webkit-box; /* For older webkit browsers */
+  display: -ms-flexbox; /* For IE10 */
   display: flex;
+  
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
   justify-content: center;
 }
 
 .fixed-top {
+  position: -webkit-sticky; /* For Safari */
   position: sticky;
   top: 0;
-  background: #f6f6f6;
+  background-color: #f6f6f6;
   z-index: 99;
   border-bottom: solid 1px #aaa;
 }

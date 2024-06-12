@@ -1,13 +1,13 @@
 {
   "name": "loong-un-arch",
   "private": true,
-  "version": "0.1.8",
+  "version": "0.1.9",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "tauri": "tauri",
+    "tauri": "tauri dev",
     "test": "jest"
   },
   "dependencies": {

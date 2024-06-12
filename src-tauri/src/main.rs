@@ -6,7 +6,7 @@ use tauri::Manager;
 
 struct OpenedUrls(Mutex<Option<Vec<url::Url>>>);
 
-use chrono::{Datelike, Local, Timelike};
+use chrono::Local;
 use colored::Colorize;
 use unrar::Archive;
 use zip::read::ZipFile;
@@ -75,20 +75,20 @@ async fn rar_list(path_str: String) -> String {
 }
 
 fn format_date(last_modified: zip::DateTime) -> String {
+    // 提取日期时间组件，避免不必要的类型转换
     let year = last_modified.year();
     let month = last_modified.month();
     let day = last_modified.day();
     let hour = last_modified.hour();
     let minute = last_modified.minute();
-    let second = last_modified.second() as u32;
-    let date = Local::now();
-    date.with_year(year as i32);
-    date.with_month(month as u32);
-    date.with_day(day as u32);
-    date.with_hour(hour as u32);
-    date.with_minute(minute as u32);
-    date.with_second(second);
-    return date.format("%Y-%m-%d %H:%M:%S").to_string();
+    let second = last_modified.second();
+
+    // 直接使用日期时间组件和格式化字符串构建最终的字符串
+    let formatted_date = format!("{year:04}-{month:02}-{day:02} {hour:02}:{minute:02}:{second:02}", 
+                                    year = year, month = month, day = day, hour = hour, 
+                                    minute = minute, second = second);
+    // 返回格式化后的日期时间字符串
+    formatted_date
 }
 
 /**
