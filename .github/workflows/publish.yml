@@ -25,8 +25,8 @@ jobs:
         version: latest
     - name: install Rust stable
       uses: dtolnay/rust-toolchain@stable
-    - name: install app dependencies and build it
-      run: pnpm i && pnpm build
+    - name: install app dependencies
+      run: pnpm i
     - uses: tauri-apps/tauri-action@v0
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
