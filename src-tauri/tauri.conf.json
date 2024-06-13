@@ -7,7 +7,7 @@
   },
   "package": {
     "productName": "LoongUnArch",
-    "version": "0.1.9"
+    "version": "0.1.10"
   },
   "tauri": {
     "allowlist": {
@@ -19,6 +19,24 @@
         "message": true, 
         "open": true, 
         "save": true
+      },
+      "os": {
+        "all": true
+      },
+      "shell": {
+        "all": false,
+        "execute": true,
+        "open": true,
+        "scope": [{
+          "name": "explorer-select",
+          "cmd": "explorer",
+          "args": ["/select,", { "validator": "\\S+" }]
+        }, {
+          "name": "mac-open",
+          "cmd": "open",
+          "args": ["-R", { "validator": "\\S+" }]
+        }],
+        "sidecar": true
       }
     },
     "bundle": {

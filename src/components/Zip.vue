@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { invoke } from "@tauri-apps/api/tauri";
+import * as OS from '@tauri-apps/api/os';
 import { TauriEvent, listen } from '@tauri-apps/api/event';
+import { Command } from '@tauri-apps/api/shell';
 import * as dialog from '@tauri-apps/api/dialog';
 import ExtraceDialog from "./ExtraceDialog.vue";
 // import { appDataDir } from '@tauri-apps/api/path';
@@ -93,7 +95,7 @@ const snackbar = ref(false);
 const snackbarWarn = ref(false);
 const snackbarWarnMsg = ref('');
 let fileSuffix: string;
-async function open() {
+async function openDialog() {
     // await invoke("lzw", { command: { data: 'hello'} });
     // await invoke("log", {str : "这是一个日志"});
     // await invoke("rar_extract", {pathStr: 'C:\\Users\\huoying\\code\\tauri-app\\test\\07_ControlCenter.rar', toPathStr:"../test/demo"});
@@ -221,12 +223,31 @@ function hasIcon(type: string) {
 
     return list.indexOf(type) >= 0
 }
+
+async function openFolder(path: string) {
+    console.log(path, `explorer /select,"${path}"`)
+    const osType = await OS.type()
+    
+    switch (osType) {
+        case 'Windows_NT':
+            const explorerCommand = new Command('explorer-select', ['/select,', `${path}`])
+            await explorerCommand.execute()
+            break;
+        case 'Darwin':
+            const macOpenCommand = new Command('mac-open', ['-R', `${path}`])
+            await macOpenCommand.execute()
+            break;
+        default:
+            break;
+    }
+}
+
 </script>
 
 <template>
     <div>
         <div class="fixed-top">
-            <v-btn @click="open">打开压缩文件</v-btn>
+            <v-btn @click="openDialog">打开压缩文件</v-btn>
             <!-- <v-btn @click="openExtraceDialog">解压</v-btn> -->
             <extrace-dialog v-if="!(selected == '')" v-model:path="extractPath" @confirm="extractHandler"></extrace-dialog>
         </div>
@@ -270,9 +291,13 @@ function hasIcon(type: string) {
                 </tr>
             </tbody>
         </v-table> -->
-        <v-snackbar v-model="snackbar" timeout="2000">
-            解压成功
+        <v-snackbar v-model="snackbar">
+            <div>解压成功</div>
+            
             <template v-slot:actions>
+                <v-btn color="indigo" size="small" variant="flat" @click="openFolder(extractPath)">
+                    打开解压目录
+                </v-btn>
                 <v-btn color="blue" variant="text" @click="snackbar = false">
                     关闭
                 </v-btn>
