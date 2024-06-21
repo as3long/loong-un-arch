@@ -69,6 +69,7 @@ export function fileInfoToTree(data: FileInfoNode[]) {
                 let id = makeid();
                 if (idx === len - 1) {
                     type = segment.substring(segment.lastIndexOf(".") + 1);
+                    type = type.toLowerCase();
                     if (type === segment) {
                         type = ''
                     }
