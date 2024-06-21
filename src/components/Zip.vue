@@ -218,7 +218,6 @@ async function extractHandler() {
 }
 
 function hasIcon(type: string) {
-    console.log(type);
     const iconStr = 'mp3, wav, aif, cda, mid, midi, mpa, mkv, ogg, wpa, wpl, 7z, zip, rar, tar.gz, pkg, z, csv, dat, json, xml, dat, db, dbf, sql, ns, 3ds, max, ai, psd, ttf, woff, woff2, png, bmp, jpg, jpeg, gif, tif, tiff, svg, rss, torrent, ppt, pps, pptx, odp, asp, c, cs, java, jsp, swift, php, hh, go, py, js, html, xhtml, css, vb, rb, scss, sass, less, jsx, sh, pl, xls, xlsx, xlsm, ods, dll, bak, ini, dmp, sys, cfg, tmp, icns, doc, docx, log, txt, pdf, avi, mov, mp4, mpg, mpeg, mkv, wmv, wps, exe';
     const list = iconStr.split(', ');
 

@@ -1626,7 +1626,7 @@ dependencies = [
 
 [[package]]
 name = "loong_un_arch"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "chardet",
  "chrono",

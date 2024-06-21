@@ -227,7 +227,7 @@ fn main() {
             //   .initialization_script(&format!("window.openedUrls = `{opened_urls}`;console.log(`{opened_urls}`);"))
             //   .build()
             //   .unwrap();
-            let _ = app.get_window("main").unwrap().eval(&format!("window.openedUrls = '{opened_urls}';console.log('{opened_urls}');"));
+            let _ = app.get_window("main").unwrap().eval(&format!("window.openedUrls = decodeURIComponent('{opened_urls}');console.log(decodeURIComponent('{opened_urls}'));"));
 
             Ok(())
           })
