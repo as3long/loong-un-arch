@@ -1,0 +1,11 @@
+[project]
+sub_id = "db28b8f7"
+name = "loong-un-arch"
+requires = ["nodejs-24", "rust"]
+project_type = "app"
+
+[preview]
+preview_enable = "disabled"
+
+[subprojects]
+path = ["."]
