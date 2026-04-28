@@ -58,6 +58,21 @@
 | jest | 29.7.0 | 30.3.0 | 测试框架升级 |
 | ts-jest | 29.1.2 | 29.4.9 | 配合 Jest 30 |
 
+### Rust 依赖（2025-01 更新）
+| 包 | 原版本 | 新版本 | 说明 |
+|---|---|---|---|
+| chrono | 0.4.32 | 0.4 | 允许更新到最新 0.4.x |
+| colored | 2.1.0 | 3 | 升级到 3.x |
+| unrar | 0.5.2 | 0.5 | 允许更新到最新 0.5.x |
+| filetime | 0.2.23 | 0.2 | 允许更新到最新 0.2.x |
+| serde/serde_json/url | 精确版本 | 灵活版本 | 使用 * 允许自动更新 |
+
+### 未升级（需代码改动）
+- **zip**: 0.6→2.x API 重构
+- **encoding**: 0.2.x 版本稳定但较老
+- **chardet**: 已弃用，建议迁移到 chardetng
+- **Tauri**: 1.x→2.x 需大量重构
+
 ### 注意事项
 - vue3-tree-vue 类型定义不完整，已添加本地类型声明 `src/vue3-tree-vue.d.ts`
 - jest.config.js 已重命名为 jest.config.cjs（ESM 兼容性）
