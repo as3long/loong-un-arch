@@ -252,20 +252,20 @@ async function openFolder(path: string) {
             <extrace-dialog v-if="!(selected == '')" v-model:path="extractPath" @confirm="extractHandler"></extrace-dialog>
         </div>
         <vue3-tree-vue :items="fileItems" style="width: 100%; display: block;">
-            <template v-slot:item-prepend-icon="treeViewItem">
+            <template v-slot:item-prepend-icon="{ type }">
                 <img src="../assets/folder.svg" alt="folder" 
-                    v-if="treeViewItem.type === 'folder'"
+                    v-if="type === 'folder'"
                     height="24" width="24">
 
-                <div v-else-if="hasIcon(treeViewItem.type)" style="margin: -8px 0; scale: 0.6;" :class="`fi fi-${treeViewItem.type}`">
-                    <div class="fi-content">{{treeViewItem.type}}</div>
+                <div v-else-if="hasIcon(type)" style="margin: -8px 0; scale: 0.6;" :class="`fi fi-${type}`">
+                    <div class="fi-content">{{type}}</div>
                 </div>
             </template>
-            <template v-slot:item-append="treeViewItem">
+            <template v-slot:item-append="{ size, time }">
                 <div class="file-info">
-                    <span class="file-size">{{ calcSize(treeViewItem.size) }}</span>
+                    <span class="file-size">{{ calcSize(size) }}</span>
 
-                    <span class="file-time">{{ dayjs(treeViewItem.time).format('YYYY-MM-DD HH:mm:ss') }}</span>
+                    <span class="file-time">{{ dayjs(time).format('YYYY-MM-DD HH:mm:ss') }}</span>
                 </div>
             </template>
         </vue3-tree-vue>

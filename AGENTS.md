@@ -43,3 +43,22 @@
 - 确保 Node.js >= 18 和 Rust 已安装
 - Windows 平台使用 `explorer /select,` 打开文件夹
 - macOS 平台使用 `open -R` 打开文件夹
+
+## 依赖版本（2024-06 更新）
+
+### 已升级
+| 包 | 原版本 | 新版本 | 说明 |
+|---|---|---|---|
+| vue | 3.3.4 | 3.5.33 | defineModel 已是内置宏 |
+| vue-tsc | 1.8.5 | 3.2.7 | 配合 Vue 3.5 |
+| vite | 5.0.0 | 6.3.5 | 大版本升级 |
+| @vitejs/plugin-vue | 4.2.3 | 5.2.3 | 配合 Vite 6 |
+| typescript | 5.0.2 | 5.8.3 | 升级到 5.x |
+| dayjs | 1.11.10 | 1.11.20 | 小版本升级 |
+| jest | 29.7.0 | 30.3.0 | 测试框架升级 |
+| ts-jest | 29.1.2 | 29.4.9 | 配合 Jest 30 |
+
+### 注意事项
+- vue3-tree-vue 类型定义不完整，已添加本地类型声明 `src/vue3-tree-vue.d.ts`
+- jest.config.js 已重命名为 jest.config.cjs（ESM 兼容性）
+- defineModel 不再需要从 vue 导入（Vue 3.4+ 内置宏）

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-    import { defineModel } from "vue";
     import * as dialog from '@tauri-apps/api/dialog';
 
     const showTxt = '解压';
