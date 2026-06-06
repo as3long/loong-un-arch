@@ -32,12 +32,5 @@
     "vite": "^6.3.5",
     "vue-tsc": "^3.2.7"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "core-js",
-      "css-file-icons",
-      "esbuild",
-      "unrs-resolver"
-    ]
-  }
+  "packageManager": "pnpm@11.5.2"
 }
