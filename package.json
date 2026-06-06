@@ -11,6 +11,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@mdi/font": "^7.4.47",
     "@tauri-apps/api": "^1.5.2",
     "css-file-icons": "^0.1.0",
     "dayjs": "^1.11.20",
@@ -30,5 +31,13 @@
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
     "vue-tsc": "^3.2.7"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "core-js",
+      "css-file-icons",
+      "esbuild",
+      "unrs-resolver"
+    ]
   }
 }
