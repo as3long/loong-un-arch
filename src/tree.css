@@ -1,5 +1,5 @@
-.selected-tree-item {
-    background: rgba(235, 106, 59, 0.795);
+  .selected-tree-item {
+    background: rgb(var(--v-theme-primary));
     color: white;
   }
   
@@ -22,7 +22,12 @@
   
   
   .tree-item {
-    padding: 0.25em;
+    padding: 0.4em 0.5em;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .tree-item:hover {
+    background: rgba(var(--v-theme-primary), 0.08);
   }
   
   ul.explorer {

@@ -58,11 +58,14 @@
       {
         "fullscreen": false,
         "resizable": true,
-        "title": "rar、zip 解压",
-        "width": 800,
-        "height": 600,
-        "label": "main"
+        "title": "LoongUnArch - 压缩文件预览与解压",
+        "label": "main",
+        "width": 960,
+        "height": 680,
+        "minWidth": 720,
+        "minHeight": 480
       }
     ]
   }
 }
+

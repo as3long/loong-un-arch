@@ -18,11 +18,13 @@ const throttle = pThrottle({
 	interval: 1000
 });
 
-const desserts = ref<FileInfo[]>([])
-const fileItems = ref<FileInfoNode[]>([])
-
-
-/**
+  const desserts = ref<FileInfo[]>([])
+  const fileItems = ref<FileInfoNode[]>([])
+  const loading = ref(false)
+  const dragOver = ref(false)
+  
+  
+  /**
  * msdos的时间转换成Date
  * @param time msdos的时间转换成Date
  */
@@ -91,17 +93,45 @@ function parseZipList(listStr: string) {
 
 const selected = ref('');
 const extractPath = ref('');
+const password = ref('');
+const extractDialogOpen = ref(false);
 const snackbar = ref(false);
 const snackbarWarn = ref(false);
 const snackbarWarnMsg = ref('');
+const extracting = ref(false);
 let fileSuffix: string;
+
+async function loadArchive(path: string) {
+    selected.value = path;
+    password.value = '';
+    const arr = selected.value.split('.');
+    fileSuffix = arr[arr.length - 1].toLowerCase();
+    extractPath.value = selected.value.replace(/\.(zip|rar)$/i, '');
+    loading.value = true;
+    try {
+        if (fileSuffix === 'rar') {
+            const list: string = await invoke("rar_list", { pathStr: selected.value })
+            desserts.value = parseRarList(list);
+        } else if (fileSuffix === 'zip') {
+            const list: string = await invoke("zip_list", { pathStr: selected.value })
+            desserts.value = parseZipList(list);
+        }
+        fileItems.value = fileInfoToTree(desserts.value);
+    } catch (error) {
+        const errorMessage = String(error);
+        snackbarWarnMsg.value = `读取压缩文件失败：${errorMessage}`;
+        snackbarWarn.value = true;
+        fileItems.value = [];
+        if (errorMessage.includes('加密压缩包')) {
+            extractDialogOpen.value = true;
+        }
+    } finally {
+        loading.value = false;
+    }
+}
+
 async function openDialog() {
-    // await invoke("lzw", { command: { data: 'hello'} });
-    // await invoke("log", {str : "这是一个日志"});
-    // await invoke("rar_extract", {pathStr: 'C:\\Users\\huoying\\code\\tauri-app\\test\\07_ControlCenter.rar', toPathStr:"../test/demo"});
-
-
-    let p = await dialog.open({
+    const p = await dialog.open({
         multiple: false,
         filters: [{
             name: '压缩文件',
@@ -109,72 +139,35 @@ async function openDialog() {
         }]
     });
 
-    
     if (p) {
-        selected.value = p?.toString() || ''
-        const arr = selected.value.split('.');
-        fileSuffix = arr[arr.length - 1];
-        extractPath.value = selected.value.replace(/.(zip|rar)$/, '');
-        console.log(selected.value, extractPath.value, arr, fileSuffix)
-        if (fileSuffix === 'rar') {
-            let list: string = await invoke("rar_list", { pathStr: selected.value })
-            // console.log(parseRarList(list))
-            desserts.value = parseRarList(list);
-        } else if (fileSuffix === 'zip') {
-            let list: string = await invoke("zip_list", { pathStr: selected.value })
-            // console.log(parseRarList(list))
-            desserts.value = parseZipList(list);
-        }
-
-        fileItems.value = fileInfoToTree(desserts.value);
-        console.log(fileItems.value)
+        await loadArchive(p.toString());
     }
 }
 
 async function dropFileHandler(p: string) {
-    console.log(TauriEvent.WINDOW_FILE_DROP, p)
-    const regex = /.(zip|rar)$/;
+    dragOver.value = false;
+    const regex = /\.(zip|rar)$/i;
     if (regex.test(p)) {
-        selected.value = p || '';
-        const arr = selected.value.split('.');
-        fileSuffix = arr[arr.length - 1];
-        extractPath.value = selected.value.replace(/.(zip|rar)$/, '');
-        console.log(selected.value, extractPath.value, arr, fileSuffix)
-        if (fileSuffix === 'rar') {
-            let list: string = await invoke("rar_list", { pathStr: selected.value })
-            // console.log(parseRarList(list))
-            desserts.value = parseRarList(list);
-        } else if (fileSuffix === 'zip') {
-            let list: string = await invoke("zip_list", { pathStr: selected.value })
-            // console.log(parseRarList(list))
-            desserts.value = parseZipList(list);
-        }
-
-        fileItems.value = fileInfoToTree(desserts.value);
-        console.log(fileItems.value)
+        await loadArchive(p || '');
     } else {
-        snackbarWarnMsg.value = '只支持rar和zip格式的文件';
+        snackbarWarnMsg.value = '只支持 rar 和 zip 格式的文件';
         snackbarWarn.value = true;
     }
 }
 
 listen(TauriEvent.WINDOW_FILE_DROP, async ({ payload }) => {
+    dragOver.value = false;
     if (payload) {
         await throttle(dropFileHandler)((payload as Array<string>)[0])
     }
 })
 
-listen('tauri://file-drop-hover', (e) => {
-    throttle(() => {
-        console.log('tauri://file-drop-hover', e)
-    })
-    
+listen('tauri://file-drop-hover', () => {
+    dragOver.value = true;
 });
 
-listen('tauri://file-drop-cancelled', (e) => {
-    throttle(() => {
-        console.log('tauri://file-drop-cancelled', e)
-    })
+listen('tauri://file-drop-cancelled', () => {
+    dragOver.value = false;
 });
 
 declare global {
@@ -191,30 +184,46 @@ onMounted(() => {
 });
 
 function calcSize(num: number) {
-    if (num === 0) {
+    if (!num) {
         return ''
     }
 
-    if (num <= 1024) {
-        return '1 KB'
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let size = num;
+    let unitIndex = 0;
+    while (size >= 1024 && unitIndex < units.length - 1) {
+        size = size / 1024;
+        unitIndex += 1;
     }
 
-    if (num <= 1024 * 1024) {
-        return Math.ceil(num / 102.4) / 10 + ' KB';
-    }
-
-    return Math.ceil(num / (1024 * 102.4)) / 10 + ' MB';
+    return `${size >= 10 ? size.toFixed(0) : size.toFixed(1)} ${units[unitIndex]}`;
 }
 
+function formatTime(time: Date) {
+    return dayjs(time).format('YYYY-MM-DD HH:mm');
+}
+
+function cancelExtractHandler() {
+    snackbarWarnMsg.value = '已取消解压';
+    snackbarWarn.value = true;
+}
 
 async function extractHandler() {
-    console.log(selected.value, extractPath.value)
-    if (fileSuffix === 'rar') {
-        await invoke("rar_extract", { pathStr: selected.value, toPathStr: extractPath.value });
-    } else if (fileSuffix === 'zip') {
-        await invoke("zip_extract", { pathStr: selected.value, toPathStr: extractPath.value });
+    extracting.value = true;
+    try {
+        const extractPassword = password.value || null;
+        if (fileSuffix === 'rar') {
+            await invoke("rar_extract", { pathStr: selected.value, toPathStr: extractPath.value, password: extractPassword });
+        } else if (fileSuffix === 'zip') {
+            await invoke("zip_extract", { pathStr: selected.value, toPathStr: extractPath.value, password: extractPassword });
+        }
+        snackbar.value = true;
+    } catch (error) {
+        snackbarWarnMsg.value = `解压失败：${String(error)}`;
+        snackbarWarn.value = true;
+    } finally {
+        extracting.value = false;
     }
-    snackbar.value = true;
 }
 
 function hasIcon(type: string) {
@@ -231,11 +240,11 @@ async function openFolder(path: string) {
     switch (osType) {
         case 'Windows_NT':
             const explorerCommand = new Command('explorer-select', ['/select,', `${path}`])
-            await explorerCommand.execute()
+            await explorerCommand.spawn()
             break;
         case 'Darwin':
             const macOpenCommand = new Command('mac-open', ['-R', `${path}`])
-            await macOpenCommand.execute()
+            await macOpenCommand.spawn()
             break;
         default:
             break;
@@ -245,72 +254,99 @@ async function openFolder(path: string) {
 </script>
 
 <template>
-    <div>
-        <div class="fixed-top">
-            <v-btn @click="openDialog">打开压缩文件</v-btn>
-            <!-- <v-btn @click="openExtraceDialog">解压</v-btn> -->
-            <extrace-dialog v-if="!(selected == '')" v-model:path="extractPath" @confirm="extractHandler"></extrace-dialog>
-        </div>
-        <vue3-tree-vue :items="fileItems" style="width: 100%; display: block;">
-            <template v-slot:item-prepend-icon="{ type }">
-                <img src="../assets/folder.svg" alt="folder" 
-                    v-if="type === 'folder'"
-                    height="24" width="24">
-
-                <div v-else-if="hasIcon(type)" style="margin: -8px 0; scale: 0.6;" :class="`fi fi-${type}`">
-                    <div class="fi-content">{{type}}</div>
+    <v-container fluid class="pa-4 pa-md-6">
+        <v-card class="app-card" elevation="3">
+            <v-card-text>
+                <div class="d-flex flex-wrap align-center ga-3 mb-4">
+                    <v-btn color="primary" variant="flat" prepend-icon="mdi-folder-open" :loading="loading" @click="openDialog">
+                        打开压缩文件
+                    </v-btn>
+                    <extrace-dialog
+                        v-if="selected"
+                        v-model:open="extractDialogOpen"
+                        v-model:path="extractPath"
+                        v-model:password="password"
+                        @confirm="extractHandler"
+                        @cancel="cancelExtractHandler"
+                    ></extrace-dialog>
+                    <span v-if="selected" class="text-body-2 text-medium-emphasis text-truncate selected-path">
+                        {{ selected }}
+                    </span>
                 </div>
-            </template>
-            <template v-slot:item-append="{ size, time }">
-                <div class="file-info">
-                    <span class="file-size">{{ calcSize(size) }}</span>
 
-                    <span class="file-time">{{ dayjs(time).format('YYYY-MM-DD HH:mm:ss') }}</span>
+                <div class="drop-zone" :class="{ 'drag-over': dragOver }" @click="openDialog">
+                    <v-icon class="drop-zone-icon" color="primary">mdi-cloud-upload-outline</v-icon>
+                    <div class="text-h6">拖拽 ZIP / RAR 文件到这里</div>
+                    <div class="text-body-2 text-medium-emphasis">或点击选择本地压缩文件</div>
                 </div>
-            </template>
-        </vue3-tree-vue>
-        <!-- <v-table fixed-header height="530px">
-            <thead>
-                <tr>
-                    <th class="text-center" width="400px">
-                        名称
-                    </th>
-                    <th class="text-center">
-                        大小
-                    </th>
-                    <th class="text-center">
-                        修改日期
-                    </th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="item in desserts" :key="item.name">
-                    <td class="text-left">{{ item.name }}</td>
-                    <td>{{ calcSize(item.size) }}</td>
-                    <td>{{ dayjs(item.time).format('YYYY-MM-DD HH:mm:ss') }}</td>
-                </tr>
-            </tbody>
-        </v-table> -->
-        <v-snackbar v-model="snackbar">
-            <div>解压成功</div>
-            
+
+                <v-expand-transition>
+                    <div v-if="extracting" class="extract-progress mb-4">
+                        <div class="d-flex align-center justify-space-between mb-2">
+                            <span class="text-body-2">正在解压到：{{ extractPath }}</span>
+                            <v-progress-circular indeterminate color="primary" size="20" width="2"></v-progress-circular>
+                        </div>
+                        <v-progress-linear indeterminate color="primary" rounded></v-progress-linear>
+                    </div>
+                </v-expand-transition>
+
+                <div v-if="loading" class="loading-overlay">
+                    <v-progress-circular indeterminate color="primary" size="48"></v-progress-circular>
+                    <span class="text-body-1 text-medium-emphasis">正在读取压缩文件...</span>
+                </div>
+
+                <div v-else-if="fileItems.length === 0" class="empty-state">
+                    <div class="empty-state-icon">
+                        <v-icon size="64" color="grey-lighten-1">mdi-archive-outline</v-icon>
+                    </div>
+                    <div class="text-h6 text-medium-emphasis mb-1">还没有打开压缩文件</div>
+                    <div class="text-body-2 text-medium-emphasis">支持 .zip 和 .rar 文件预览与解压</div>
+                </div>
+
+                <div v-else class="tree-container">
+                    <vue3-tree-vue :items="fileItems" style="width: 100%; display: block;">
+                        <template v-slot:item-prepend-icon="treeViewItem">
+                            <img src="../assets/folder.svg" alt="folder"
+                                v-if="treeViewItem.type === 'folder'"
+                                height="24" width="24">
+
+                            <div v-else-if="hasIcon(treeViewItem.type)" style="margin: -8px 0; scale: 0.6;" :class="`fi fi-${treeViewItem.type}`">
+                                <div class="fi-content">{{treeViewItem.type}}</div>
+                            </div>
+                            <v-icon v-else size="22" color="grey">mdi-file-outline</v-icon>
+                        </template>
+                        <template v-slot:item-append="treeViewItem">
+                            <div class="file-info">
+                                <span class="file-size">{{ calcSize(treeViewItem.size) }}</span>
+                                <span class="file-time">{{ formatTime(treeViewItem.time) }}</span>
+                            </div>
+                        </template>
+                    </vue3-tree-vue>
+                </div>
+            </v-card-text>
+        </v-card>
+
+        <v-snackbar v-model="snackbar" timeout="4000" color="success" class="success-snackbar">
+            <v-icon start>mdi-check-circle</v-icon>
+            <span>解压成功</span>
             <template v-slot:actions>
-                <v-btn color="indigo" size="small" variant="flat" @click="openFolder(extractPath)">
+                <v-btn color="white" size="small" variant="flat" @click="openFolder(extractPath)">
                     打开解压目录
                 </v-btn>
-                <v-btn color="blue" variant="text" @click="snackbar = false">
+                <v-btn color="white" variant="text" @click="snackbar = false">
                     关闭
                 </v-btn>
             </template>
         </v-snackbar>
 
-        <v-snackbar v-model="snackbarWarn" timeout="2000">
-            {{ snackbarWarnMsg }}
+        <v-snackbar v-model="snackbarWarn" timeout="3000" color="warning">
+            <v-icon start>mdi-alert-circle</v-icon>
+            <span>{{ snackbarWarnMsg }}</span>
             <template v-slot:actions>
-                <v-btn color="blue" variant="text" @click="snackbarWarn = false">
+                <v-btn color="white" variant="text" @click="snackbarWarn = false">
                     关闭
                 </v-btn>
             </template>
         </v-snackbar>
-    </div>
+    </v-container>
 </template>

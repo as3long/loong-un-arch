@@ -31,22 +31,38 @@ async fn log (str: String) {
 }
 
 #[tauri::command]
-async fn rar_extract(path_str: String, to_path_str: String) -> Result<(), String> {
-    let mut archive = match Archive::new(&path_str).open_for_processing() {
+async fn rar_extract(path_str: String, to_path_str: String, password: Option<String>) -> Result<(), String> {
+    let password = password.unwrap_or_default();
+    let archive_builder = if password.is_empty() {
+        Archive::new(&path_str)
+    } else {
+        Archive::with_password(&path_str, &password)
+    };
+
+    let mut archive = match archive_builder.open_for_processing() {
         Ok(archive) => archive,
         Err(e) => {
             println!("Failed to open archive: {}", e);
-            return Err("打开文件失败".to_string());
+            return Err("打开文件失败，可能需要密码或密码错误".to_string());
         }
     };
     
-    while let Some(header) = archive.read_header().unwrap() {
+    loop {
+        let header = match archive.read_header() {
+            Ok(Some(header)) => header,
+            Ok(None) => break,
+            Err(e) => {
+                println!("Failed to read rar header: {}", e);
+                return Err("密码错误或解压失败".to_string());
+            }
+        };
+
         archive = if header.entry().is_file() {
             match header.extract_with_base(to_path_str.clone()) {
                 Ok(archive) => archive,
                 Err(e) => {
                     println!("Failed to extract file: {}", e);
-                    return Err("解压失败".to_string());
+                    return Err("密码错误或解压失败".to_string());
                 }
             }
         } else {
@@ -63,15 +79,23 @@ async fn rar_extract(path_str: String, to_path_str: String) -> Result<(), String
 }
 
 #[tauri::command]
-async fn rar_list(path_str: String) -> String {
+async fn rar_list(path_str: String) -> Result<String, String> {
     let mut v: Vec<String> = Vec::new();
-    let archive = Archive::new(&path_str).open_for_listing().unwrap();
+    let archive = Archive::new(&path_str)
+        .open_for_listing()
+        .map_err(|e| {
+            println!("Failed to open rar for listing: {}", e);
+            "读取 RAR 文件失败，加密压缩包暂不支持预览，请直接输入密码后解压".to_string()
+        })?;
     for e in archive {
-        let entry = e.unwrap();
+        let entry = e.map_err(|e| {
+            println!("Failed to read rar entry for listing: {}", e);
+            "读取 RAR 条目失败，加密压缩包暂不支持预览，请直接输入密码后解压".to_string()
+        })?;
         v.push(format!("{}|{}|{}", entry.filename.to_string_lossy(), entry.unpacked_size, entry.file_time));
     }
     let out =  v.join(",").to_string();
-    format!("{}", out)
+    Ok(format!("{}", out))
 }
 
 fn format_date(last_modified: zip::DateTime) -> String {
@@ -95,16 +119,33 @@ fn format_date(last_modified: zip::DateTime) -> String {
  * 检测zip文件编码
  */
 fn detect_zip(path_str: &String) -> String {
-    let file = fs::File::open(path_str).unwrap();
+    let file = match fs::File::open(path_str) {
+        Ok(file) => file,
+        Err(e) => {
+            println!("Failed to open zip for charset detection: {}", e);
+            return "GBK".to_string();
+        }
+    };
     let reader = BufReader::new(file);
 
     // 组合zip的所有文件名，一起检测编码
     // 前提是我们假设 zip的每个文件名编码相同，暂时先不考虑文件名编码不同的情况
-    let mut archive = zip::ZipArchive::new(reader).unwrap();
+    let mut archive = match zip::ZipArchive::new(reader) {
+        Ok(archive) => archive,
+        Err(e) => {
+            println!("Failed to read zip for charset detection: {}", e);
+            return "GBK".to_string();
+        }
+    };
     let mut result: Vec<u8> = Vec::new();
     for i in 0..archive.len() {
-        let file = archive.by_index(i).unwrap();
-        result.extend_from_slice(file.name_raw());
+        match archive.by_index(i) {
+            Ok(file) => result.extend_from_slice(file.name_raw()),
+            Err(e) => {
+                println!("Failed to read zip entry for charset detection: {}", e);
+                return "GBK".to_string();
+            }
+        }
     }
     let charset = detect(&result);
     let charset2enc_str = match charset.0.as_str() {
@@ -119,6 +160,10 @@ fn detect_zip(path_str: &String) -> String {
 
 fn u82str(file: &ZipFile, charset: &str) -> String {
     let name_raw = file.name_raw();
+
+    if std::str::from_utf8(name_raw).is_ok() {
+        return file.name().to_string();
+    }
     
     let coder = encoding_from_whatwg_label(charset);
     let name = match coder {
@@ -129,52 +174,65 @@ fn u82str(file: &ZipFile, charset: &str) -> String {
 }
 
 #[tauri::command]
-async fn zip_list(path_str: String) -> String {
+async fn zip_list(path_str: String) -> Result<String, String> {
     let mut v: Vec<String> = Vec::new();
-    let file = fs::File::open(path_str.clone()).unwrap();
+    let file = fs::File::open(path_str.clone()).map_err(|e| format!("打开 ZIP 文件失败：{}", e))?;
     let reader = BufReader::new(file);
 
-    let mut archive = zip::ZipArchive::new(reader).unwrap();
+    let mut archive = zip::ZipArchive::new(reader).map_err(|e| format!("读取 ZIP 文件失败：{}", e))?;
     let charset = detect_zip(&path_str);
     println!("zip_list {}", charset);
     for i in 0..archive.len() {
-        let file = archive.by_index(i).unwrap();
+        let file = archive.by_index(i).map_err(|e| {
+            println!("Failed to read zip entry for listing: {}", e);
+            "读取 ZIP 条目失败，加密压缩包暂不支持预览，请直接输入密码后解压".to_string()
+        })?;
         let last_modified = file.last_modified();
         v.push(format!("{}|{}|{}", u82str(&file, charset.as_str()), file.size(), format_date(last_modified)))
     }
     let out =  v.join(",").to_string();
-    format!("{}", out)
+    Ok(format!("{}", out))
 }
 
 #[tauri::command]
-async fn zip_extract(path_str: String, to_path_str: String) -> Result<(), String> {
+async fn zip_extract(path_str: String, to_path_str: String, password: Option<String>) -> Result<(), String> {
     // let detect_zip_path_str = path_str.clone();
     let charset = detect_zip(&path_str);
-    let file = fs::File::open(path_str).unwrap();
+    let file = fs::File::open(path_str).map_err(|e| format!("打开文件失败：{}", e))?;
     let reader = BufReader::new(file);
     let outdir_path = Path::new(&to_path_str);
+    let password = password.unwrap_or_default();
+    let password = password.as_str();
 
-    let mut archive = zip::ZipArchive::new(reader).unwrap();
+    let mut archive = zip::ZipArchive::new(reader).map_err(|e| format!("读取 ZIP 文件失败：{}", e))?;
     
     for i in 0..archive.len() {
-        let mut file = archive.by_index(i).unwrap();
+        let mut file = if password.is_empty() {
+            archive.by_index(i).map_err(|e| format!("读取 ZIP 条目失败：{}", e))?
+        } else {
+            match archive.by_index_decrypt(i, password.as_bytes()) {
+                Ok(Ok(file)) => file,
+                Ok(Err(_)) => return Err("密码错误".to_string()),
+                Err(e) => return Err(format!("读取 ZIP 条目失败：{}", e)),
+            }
+        };
         let name = u82str(&file, charset.as_str());
         let filepath = Path::new(&name);
         let outpath = outdir_path.join(filepath);
 
         if file.name().ends_with('/') {
-            let _ = fs::create_dir_all(&outpath);
+            fs::create_dir_all(&outpath).map_err(|e| format!("创建目录失败：{}", e))?;
         } else {
             if let Some(p) = outpath.parent() {
                 if !p.exists() {
-                    fs::create_dir_all(p).expect("Failed to create directory");
+                    fs::create_dir_all(p).map_err(|e| format!("创建目录失败：{}", e))?;
                 }
             }
-            let mut outfile = fs::File::create(&outpath).unwrap();
-            std::io::copy(&mut file, &mut outfile).unwrap();
+            let mut outfile = fs::File::create(&outpath).map_err(|e| format!("创建文件失败：{}", e))?;
+            std::io::copy(&mut file, &mut outfile).map_err(|e| format!("写入文件失败，可能是密码错误或文件损坏：{}", e))?;
         }
 
-        let tm = file.last_modified().to_time().unwrap();
+        let tm = file.last_modified().to_time().map_err(|e| format!("读取文件时间失败：{}", e))?;
         let tm2 = FileTime::from_unix_time(tm.unix_timestamp(), tm.nanosecond());
         let _ = set_symlink_file_times(&outpath, tm2, tm2);
 
@@ -183,7 +241,7 @@ async fn zip_extract(path_str: String, to_path_str: String) -> Result<(), String
         {
             use std::os::unix::fs::PermissionsExt;
             if let Some(mode) = file.unix_mode() {
-                fs::set_permissions(&outpath, fs::Permissions::from_mode(mode)).unwrap();
+                fs::set_permissions(&outpath, fs::Permissions::from_mode(mode)).map_err(|e| format!("设置文件权限失败：{}", e))?;
             }
         }
     }
