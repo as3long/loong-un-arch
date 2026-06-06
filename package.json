@@ -1,13 +1,14 @@
 {
   "name": "loong-un-arch",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "test": "jest"
+    "test": "jest",
+    "version:sync": "node scripts/sync-version.cjs"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
