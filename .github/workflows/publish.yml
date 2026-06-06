@@ -39,15 +39,19 @@ jobs:
 
       - name: install app dependencies
         run: pnpm install --frozen-lockfile
-
-      - uses: tauri-apps/tauri-action@v0.6
+        
+      - name: build frontend
+        run: pnpm build
+        
+      - name: build and upload release
+        uses: tauri-apps/tauri-action@v0.6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: v__VERSION__
           releaseName: "v__VERSION__"
           releaseBody: "See the assets to download this version and install."
-          releaseDraft: false        # 改为 false，自动发布正式版本
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
 
